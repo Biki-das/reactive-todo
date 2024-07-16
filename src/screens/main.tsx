@@ -46,7 +46,7 @@ const initialData = [
 ]
 
 export default function MainScreen() {
-  const token = ``
+  const token = AsyncStorage.getItem('userToken')
   const [data, setData] = React.useState(initialData)
   const [editingItemId, setEditingItemId] = React.useState<string | null>(null)
   const [r, setR] = React.useState(null)
@@ -95,6 +95,10 @@ export default function MainScreen() {
 
   React.useEffect(() => {
     loadTodos().then(setData)
+    AsyncStorage.setItem(
+      'userToken',
+      `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImU0MGY1MTNmLTdkNjAtNDQ1Yy1hMzNiLTE4NzM4MDMwYmFkMCIsInVzZXJuYW1lIjoiYmFrZSIsImlhdCI6MTcyMTE0MDY4N30.3jZOjgp_7oPxLjCWnNwZT6w4vczmY9P4JU-jFCsqCnA`
+    )
   }, [])
 
   // Save todos whenever data changes
@@ -106,29 +110,32 @@ export default function MainScreen() {
   // which makes the pull not recieve any data
 
   React.useEffect(() => {
-    // const r = new Replicache({
-    //   name: 'chat-user-id',
-    //   licenseKey: TEST_LICENSE_KEY,
-    //   mutators: {},
-    //   pushURL: `https://todo-api-ixpx.onrender.com/api/replicache/push`,
-    //   pullURL: `https://todo-api-ixpx.onrender.com/api/replicache/pull`,
-    //   auth: `Bearer ${token}`,
-    //   logLevel: 'debug',
-    //   experimentalCreateKVStore:
-    //     createReplicacheExpoSQLiteExperimentalCreateKVStore
-    // })
-    // setR(r)
-    // return () => {
-    //   void r.close()
-    // }
+    const r = new Replicache({
+      name: 'chat-user-id',
+      licenseKey: TEST_LICENSE_KEY,
+      mutators: {},
+      pushURL: `https://todo-api-ixpx.onrender.com/api/replicache/push`,
+      pullURL: `https://todo-api-ixpx.onrender.com/api/replicache/pull`,
+      auth: `Bearer ${`eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImU0MGY1MTNmLTdkNjAtNDQ1Yy1hMzNiLTE4NzM4MDMwYmFkMCIsInVzZXJuYW1lIjoiYmFrZSIsImlhdCI6MTcyMTE0MDY4N30.3jZOjgp_7oPxLjCWnNwZT6w4vczmY9P4JU-jFCsqCnA`}`,
+      experimentalCreateKVStore:
+        createReplicacheExpoSQLiteExperimentalCreateKVStore
+    })
+    setR(r)
+    return () => {
+      void r.close()
+    }
   }, [])
 
-  console.log(token)
-
-  const messages = useSubscribe(r, async (tx) => {
-    const list = await tx.scan({ prefix: '/message' }).entries().toArray()
-    return list
-  })
+  const messages = useSubscribe(
+    r,
+    async (tx) => {
+      const list = await tx.scan({ prefix: 'message/' }).entries().toArray()
+      list.sort(([, { order: a }], [, { order: b }]) => a - b)
+      console.log(list)
+      return list
+    },
+    { default: [] }
+  )
 
   return (
     <AnimatedColorBox
