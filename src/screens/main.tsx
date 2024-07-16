@@ -11,17 +11,21 @@ import {
   useColorMode,
   useColorModeValue,
   Button,
-  Input
+  Input,
+  View
 } from 'native-base'
 import ThemeSwitch from '../components/theme-switcher'
-
-import { TodoItem } from '../components/todo-item'
+import { Replicache, TEST_LICENSE_KEY } from 'replicache'
 import TodoList from '../components/todo-list'
 import AnimatedColorBox from '../components/colorbox'
 import { AntDesign } from '@expo/vector-icons'
 import shortid from 'shortid'
 import Header from '../components/header'
 import NavBar from '../components/navbar'
+
+import { useSubscribe } from 'replicache-react'
+import AsyncStorage from '@react-native-async-storage/async-storage'
+import { createReplicacheExpoSQLiteExperimentalCreateKVStore } from '@react-native-replicache/react-native-expo-sqlite'
 
 const initialData = [
   {
@@ -42,27 +46,23 @@ const initialData = [
 ]
 
 export default function MainScreen() {
+  const token = ``
   const [data, setData] = React.useState(initialData)
   const [editingItemId, setEditingItemId] = React.useState<string | null>(null)
+  const [r, setR] = React.useState(null)
   const handleToggleTaskItem = React.useCallback((item) => {
     setData((prevData) => {
-      const newData = [...prevData]
-      const index = prevData.indexOf(item)
-      newData[index] = {
-        ...item,
-        done: !item.done
-      }
+      const newData = prevData.map((todo) =>
+        todo.id === item.id ? { ...todo, done: !todo.done } : todo
+      )
       return newData
     })
   }, [])
   const handleChangeTaskItemSubject = React.useCallback((item, newSubject) => {
     setData((prevData) => {
-      const newData = [...prevData]
-      const index = prevData.indexOf(item)
-      newData[index] = {
-        ...item,
-        subject: newSubject
-      }
+      const newData = prevData.map((todo) =>
+        todo.id === item.id ? { ...todo, subject: newSubject } : todo
+      )
       return newData
     })
   }, [])
@@ -73,11 +73,62 @@ export default function MainScreen() {
     setEditingItemId(item.id)
   }, [])
   const handleRemoveItem = React.useCallback((item) => {
-    setData((prevData) => {
-      const newData = prevData.filter((i) => i !== item)
-      return newData
-    })
+    setData((prevData) => prevData.filter((i) => i !== item))
   }, [])
+  const saveTodos = async (todos) => {
+    try {
+      await AsyncStorage.setItem('@todos', JSON.stringify(todos))
+    } catch (e) {
+      console.error('Failed to save todos', e)
+    }
+  }
+
+  const loadTodos = async () => {
+    try {
+      const storedTodos = await AsyncStorage.getItem('@todos')
+      return storedTodos != null ? JSON.parse(storedTodos) : initialData
+    } catch (e) {
+      console.error('Failed to load todos', e)
+      return initialData
+    }
+  }
+
+  React.useEffect(() => {
+    loadTodos().then(setData)
+  }, [])
+
+  // Save todos whenever data changes
+  React.useEffect(() => {
+    saveTodos(data)
+  }, [data])
+
+  // some use with the react native replicache library
+  // which makes the pull not recieve any data
+
+  React.useEffect(() => {
+    // const r = new Replicache({
+    //   name: 'chat-user-id',
+    //   licenseKey: TEST_LICENSE_KEY,
+    //   mutators: {},
+    //   pushURL: `https://todo-api-ixpx.onrender.com/api/replicache/push`,
+    //   pullURL: `https://todo-api-ixpx.onrender.com/api/replicache/pull`,
+    //   auth: `Bearer ${token}`,
+    //   logLevel: 'debug',
+    //   experimentalCreateKVStore:
+    //     createReplicacheExpoSQLiteExperimentalCreateKVStore
+    // })
+    // setR(r)
+    // return () => {
+    //   void r.close()
+    // }
+  }, [])
+
+  console.log(token)
+
+  const messages = useSubscribe(r, async (tx) => {
+    const list = await tx.scan({ prefix: '/message' }).entries().toArray()
+    return list
+  })
 
   return (
     <AnimatedColorBox
@@ -88,6 +139,7 @@ export default function MainScreen() {
       <Header title="Welcome to Reactive Todo">
         <NavBar />
       </Header>
+      <View></View>
       <VStack
         flex={1}
         space={1}
@@ -114,15 +166,15 @@ export default function MainScreen() {
         icon={<Icon color="white" as={<AntDesign name="plus" />} size="sm" />}
         colorScheme={useColorModeValue('blue', 'darkBlue')}
         bg={useColorModeValue('blue.500', 'blue.400')}
-        onPress={() => {
+        onPress={async () => {
           const id = shortid.generate()
-          setData([
+          setData((prevData) => [
             {
               id,
               subject: '',
               done: false
             },
-            ...data
+            ...prevData
           ])
           setEditingItemId(id)
         }}
