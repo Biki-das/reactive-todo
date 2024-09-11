@@ -1,21 +1,5 @@
 import * as React from 'react'
-import {
-  Text,
-  Box,
-  Center,
-  VStack,
-  Fab,
-  Icon,
-  themeTools,
-  useTheme,
-  useColorMode,
-  useColorModeValue,
-  Button,
-  Input,
-  View
-} from 'native-base'
-import ThemeSwitch from '../components/theme-switcher'
-import { Replicache, TEST_LICENSE_KEY } from 'replicache'
+import { VStack, Fab, Icon, useColorModeValue, View } from 'native-base'
 import TodoList from '../components/todo-list'
 import AnimatedColorBox from '../components/colorbox'
 import { AntDesign } from '@expo/vector-icons'
@@ -25,7 +9,6 @@ import NavBar from '../components/navbar'
 
 import { useSubscribe } from 'replicache-react'
 import AsyncStorage from '@react-native-async-storage/async-storage'
-import { createReplicacheExpoSQLiteExperimentalCreateKVStore } from '@react-native-replicache/react-native-expo-sqlite'
 
 const initialData = [
   {
@@ -95,10 +78,6 @@ export default function MainScreen() {
 
   React.useEffect(() => {
     loadTodos().then(setData)
-    AsyncStorage.setItem(
-      'userToken',
-      `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImU0MGY1MTNmLTdkNjAtNDQ1Yy1hMzNiLTE4NzM4MDMwYmFkMCIsInVzZXJuYW1lIjoiYmFrZSIsImlhdCI6MTcyMTE0MDY4N30.3jZOjgp_7oPxLjCWnNwZT6w4vczmY9P4JU-jFCsqCnA`
-    )
   }, [])
 
   // Save todos whenever data changes
@@ -108,34 +87,6 @@ export default function MainScreen() {
 
   // some use with the react native replicache library
   // which makes the pull not recieve any data
-
-  React.useEffect(() => {
-    const r = new Replicache({
-      name: 'chat-user-id',
-      licenseKey: TEST_LICENSE_KEY,
-      mutators: {},
-      pushURL: `https://todo-api-ixpx.onrender.com/api/replicache/push`,
-      pullURL: `https://todo-api-ixpx.onrender.com/api/replicache/pull`,
-      auth: `Bearer ${`eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImU0MGY1MTNmLTdkNjAtNDQ1Yy1hMzNiLTE4NzM4MDMwYmFkMCIsInVzZXJuYW1lIjoiYmFrZSIsImlhdCI6MTcyMTE0MDY4N30.3jZOjgp_7oPxLjCWnNwZT6w4vczmY9P4JU-jFCsqCnA`}`,
-      experimentalCreateKVStore:
-        createReplicacheExpoSQLiteExperimentalCreateKVStore
-    })
-    setR(r)
-    return () => {
-      void r.close()
-    }
-  }, [])
-
-  const messages = useSubscribe(
-    r,
-    async (tx) => {
-      const list = await tx.scan({ prefix: 'message/' }).entries().toArray()
-      list.sort(([, { order: a }], [, { order: b }]) => a - b)
-      console.log(list)
-      return list
-    },
-    { default: [] }
-  )
 
   return (
     <AnimatedColorBox
