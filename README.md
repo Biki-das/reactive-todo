@@ -2,7 +2,9 @@
 
 A feature-rich todo list application built with React Native, featuring task management, dark mode, and smooth animations.
 
-![App Demo](./assets/ScreenRecording_02-21-2025%2000-44-53_1.MP4)
+
+https://github.com/user-attachments/assets/80da671b-23b7-4692-93a4-f7f84d86b267
+
 
 ## Features
 
@@ -12,7 +14,6 @@ A feature-rich todo list application built with React Native, featuring task man
 - ✅ Delete tasks with swipe gesture
 - ✅ Persistent storage using AsyncStorage
 - 🌗 Dark mode support
-- 🔄 Task filtering (All/Active/Completed)
 - ✨ Smooth animations for better UX
 
 ## Technologies Used
